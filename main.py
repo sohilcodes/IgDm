@@ -34,7 +34,7 @@ except Exception as e:
     print("❌ Login Error:", e)
     exit()
 
-# ===== TARGET (REAL PAGES) =====
+# ===== TARGET =====
 targets = [
     "indianreels",
     "contentcreatorindia",
@@ -69,7 +69,7 @@ if os.path.exists(STATE_FILE):
 else:
     state = {"sent": 0}
 
-# ===== SAFE CALL (ANTI-429) =====
+# ===== SAFE CALL =====
 def safe_call(func, *args, **kwargs):
     retries = 0
     while retries < 5:
@@ -79,7 +79,7 @@ def safe_call(func, *args, **kwargs):
             print("⚠️ Error:", e)
             retries += 1
             sleep_time = random.randint(300, 600)
-            print(f"⏸️ Sleeping {sleep_time}s (anti-429)")
+            print(f"⏸️ Sleeping {sleep_time}s")
             time.sleep(sleep_time)
     return None
 
@@ -134,7 +134,6 @@ def process_targets():
                 continue
 
             followers = safe_call(cl.user_followers, uid, amount=5)
-
             if not followers:
                 continue
 
@@ -151,13 +150,13 @@ def run_bot():
         print("🛑 Cycle Done → Sleep 20 min")
         time.sleep(1200)
 
-# ===== SERVER (RENDER FIX) =====
+# ===== SERVER (FIXED) =====
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.send_header("Content-type", "text/plain")
         self.end_headers()
-        self.wfile.write(b"Bot Running ✅")
+        self.wfile.write("Bot Running".encode())  # FIXED (no emoji issue)
 
 def run_server():
     port = int(os.environ.get("PORT", 10000))
