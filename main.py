@@ -93,7 +93,6 @@ def human_behavior(user):
             medias = safe_call(cl.user_medias, user.pk, amount=1)
             if medias:
                 safe_call(cl.media_like, medias[0].id)
-                print("❤️ Liked")
 
         time.sleep(random.randint(5, 10))
     except:
@@ -102,7 +101,6 @@ def human_behavior(user):
 # ===== SEND DM =====
 def send_dm(user):
     if state["sent"] >= daily_limit:
-        print("🚫 Daily limit reached")
         return
 
     try:
@@ -117,7 +115,6 @@ def send_dm(user):
             json.dump(state, f)
 
         delay = random.randint(120, 240)
-        print(f"⏳ Sleep {delay}s")
         time.sleep(delay)
 
     except Exception as e:
@@ -126,7 +123,7 @@ def send_dm(user):
 # ===== PROCESS TARGET =====
 def process_targets():
     for target in targets:
-        print(f"\n🎯 Target: {target}")
+        print(f"🎯 Target: {target}")
 
         try:
             uid = safe_call(cl.user_id_from_username, target)
@@ -147,16 +144,15 @@ def process_targets():
 def run_bot():
     while True:
         process_targets()
-        print("🛑 Cycle Done → Sleep 20 min")
+        print("🛑 Sleeping 20 min")
         time.sleep(1200)
 
-# ===== SERVER (FIXED) =====
+# ===== SERVER =====
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
-        self.send_header("Content-type", "text/plain")
         self.end_headers()
-        self.wfile.write("Bot Running".encode())  # FIXED (no emoji issue)
+        self.wfile.write("Bot Running".encode())
 
 def run_server():
     port = int(os.environ.get("PORT", 10000))
@@ -164,6 +160,11 @@ def run_server():
     print(f"🌐 Server running on port {port}")
     server.serve_forever()
 
-# ===== START =====
-threading.Thread(target=run_bot).start()
-run_server()
+# ===== START (IMPORTANT FIX) =====
+threading.Thread(target=run_server, daemon=True).start()
+time.sleep(2)
+threading.Thread(target=run_bot, daemon=True).start()
+
+# Keep alive
+while True:
+    time.sleep(60)
