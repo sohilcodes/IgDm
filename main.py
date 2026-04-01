@@ -2,6 +2,8 @@ import os
 import time
 import random
 import json
+import threading
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from instagrapi import Client
 
 # ===== ENV =====
@@ -20,12 +22,16 @@ if PROXY:
 if os.path.exists("session.json"):
     cl.load_settings("session.json")
 
-cl.login(USERNAME, PASSWORD)
-cl.dump_settings("session.json")
+# ===== LOGIN =====
+try:
+    cl.login(USERNAME, PASSWORD)
+    cl.dump_settings("session.json")
+    print("✅ Login Successful")
+except Exception as e:
+    print("❌ Login Error:", e)
+    exit()
 
-print("✅ Login Successful")
-
-# ===== TARGET (India / UP Audience) =====
+# ===== TARGET (India Audience) =====
 targets = [
     "indianreels",
     "contentcreatorindia",
@@ -33,8 +39,7 @@ targets = [
     "startupindia",
     "reelsindia",
     "lucknowcity",
-    "kanpurdiaries",
-    "delhi_memes"
+    "kanpurdiaries"
 ]
 
 daily_limit = 10
@@ -43,7 +48,7 @@ messages = [
 """Hey 👋  
 Aapka content mast hai 🔥  
 
-Agar aap apna page grow karna chahte ho toh:
+Agar aap apna page grow karna chahte ho:
 1k followers = ₹30  
 1k likes = ₹12  
 1k views = ₹2  
@@ -126,8 +131,25 @@ def process_targets():
         except Exception as e:
             print("Target Error:", e)
 
-# ===== MAIN LOOP =====
-while True:
-    process_targets()
-    print("🛑 Cycle Done → Sleep 20 min")
-    time.sleep(1200)
+# ===== MAIN BOT LOOP =====
+def run_bot():
+    while True:
+        process_targets()
+        print("🛑 Cycle Done → Sleep 20 min")
+        time.sleep(1200)
+
+# ===== FAKE SERVER (Render Fix) =====
+class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot Running")
+
+def run_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("", port), Handler)
+    server.serve_forever()
+
+# ===== START BOTH =====
+threading.Thread(target=run_bot).start()
+run_server()
