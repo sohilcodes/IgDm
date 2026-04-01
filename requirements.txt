@@ -1,0 +1,4 @@
+instagrapi
+requests
+Pillow
+pycryptodomex
