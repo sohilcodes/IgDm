@@ -15,8 +15,11 @@ cl = Client()
 
 # ===== PROXY =====
 if PROXY:
-    cl.set_proxy(PROXY)
-    print("🌐 Proxy Enabled")
+    try:
+        cl.set_proxy(PROXY)
+        print("🌐 Proxy Enabled")
+    except:
+        print("❌ Proxy Error")
 
 # ===== SESSION =====
 if os.path.exists("session.json"):
@@ -31,7 +34,7 @@ except Exception as e:
     print("❌ Login Error:", e)
     exit()
 
-# ===== TARGET (India Audience) =====
+# ===== TARGET (REAL PAGES) =====
 targets = [
     "indianreels",
     "contentcreatorindia",
@@ -39,7 +42,8 @@ targets = [
     "startupindia",
     "reelsindia",
     "lucknowcity",
-    "kanpurdiaries"
+    "kanpurdiaries",
+    "delhi_memes"
 ]
 
 daily_limit = 10
@@ -48,7 +52,7 @@ messages = [
 """Hey 👋  
 Aapka content mast hai 🔥  
 
-Agar aap apna page grow karna chahte ho:
+Agar growth chahte ho:
 1k followers = ₹30  
 1k likes = ₹12  
 1k views = ₹2  
@@ -65,16 +69,19 @@ if os.path.exists(STATE_FILE):
 else:
     state = {"sent": 0}
 
-# ===== SAFE CALL =====
+# ===== SAFE CALL (ANTI-429) =====
 def safe_call(func, *args, **kwargs):
-    while True:
+    retries = 0
+    while retries < 5:
         try:
             return func(*args, **kwargs)
         except Exception as e:
             print("⚠️ Error:", e)
+            retries += 1
             sleep_time = random.randint(300, 600)
             print(f"⏸️ Sleeping {sleep_time}s (anti-429)")
             time.sleep(sleep_time)
+    return None
 
 # ===== HUMAN BEHAVIOR =====
 def human_behavior(user):
@@ -123,7 +130,13 @@ def process_targets():
 
         try:
             uid = safe_call(cl.user_id_from_username, target)
+            if not uid:
+                continue
+
             followers = safe_call(cl.user_followers, uid, amount=5)
+
+            if not followers:
+                continue
 
             for user in followers.values():
                 send_dm(user)
@@ -131,25 +144,27 @@ def process_targets():
         except Exception as e:
             print("Target Error:", e)
 
-# ===== MAIN BOT LOOP =====
+# ===== BOT LOOP =====
 def run_bot():
     while True:
         process_targets()
         print("🛑 Cycle Done → Sleep 20 min")
         time.sleep(1200)
 
-# ===== FAKE SERVER (Render Fix) =====
+# ===== SERVER (RENDER FIX) =====
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
+        self.send_header("Content-type", "text/plain")
         self.end_headers()
-        self.wfile.write(b"Bot Running")
+        self.wfile.write(b"Bot Running ✅")
 
 def run_server():
     port = int(os.environ.get("PORT", 10000))
-    server = HTTPServer(("", port), Handler)
+    server = HTTPServer(("0.0.0.0", port), Handler)
+    print(f"🌐 Server running on port {port}")
     server.serve_forever()
 
-# ===== START BOTH =====
+# ===== START =====
 threading.Thread(target=run_bot).start()
 run_server()
